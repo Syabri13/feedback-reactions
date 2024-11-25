@@ -21,9 +21,12 @@ const db = getFirestore(app);
 document.getElementById("login-btn").addEventListener("click", function () {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
-        .then(() => {
+        .then((result) => {
+            const user = result.user;
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("reactions-container").style.display = "block";
+            document.getElementById("logout-btn").style.display = "inline-block";
+            console.log(`User ${user.displayName} berhasil login.`);
         })
         .catch((error) => {
             console.error("Login gagal:", error);
@@ -36,19 +39,38 @@ document.getElementById("logout-btn").addEventListener("click", function () {
     signOut(auth).then(() => {
         document.getElementById("auth-container").style.display = "block";
         document.getElementById("reactions-container").style.display = "none";
+        document.getElementById("logout-btn").style.display = "none";
     });
 });
 
 // Fungsi pengiriman reaksi
-function submitReaction(reaction) {
+function submitReaction(reaction, event) {
+    const user = auth.currentUser;
+
+    if (!user) {
+        alert("Anda harus login untuk memberikan reaksi.");
+        return;
+    }
+
     console.log("Reaksi diklik:", reaction);
     const reactionsCollection = collection(db, "reactions");
     addDoc(reactionsCollection, {
+        userId: user.uid,
+        userName: user.displayName,
         reaction: reaction,
         timestamp: new Date(),
-    }).then(() => {
-        console.log("Reaksi berhasil disimpan:", reaction);
-    });
+    })
+        .then(() => {
+            console.log("Reaksi berhasil disimpan:", reaction);
+            // Tambahkan efek klik
+            event.target.classList.add("clicked");
+            setTimeout(() => {
+                event.target.classList.remove("clicked");
+            }, 300);
+        })
+        .catch((error) => {
+            console.error("Gagal menyimpan reaksi:", error);
+        });
 }
 
 // Fungsi untuk menampilkan reaksi secara real-time
@@ -65,9 +87,18 @@ function displayReactions() {
             "Tidak Puas 👎": 0,
         };
 
+        // Hapus konten sebelumnya
+        const responseList = document.getElementById("responses");
+        responseList.innerHTML = "";
+
         snapshot.forEach((doc) => {
             const data = doc.data();
             counts[data.reaction] = (counts[data.reaction] || 0) + 1;
+
+            // Tampilkan daftar reaksi
+            const li = document.createElement("li");
+            li.textContent = `${data.userName} memilih "${data.reaction}" pada ${data.timestamp.toDate().toLocaleString()}`;
+            responseList.appendChild(li);
         });
 
         // Update tampilan jumlah reaksi
@@ -75,23 +106,8 @@ function displayReactions() {
         countsContainer.innerHTML = Object.entries(counts)
             .map(([reaction, count]) => `<p>${reaction}: ${count}</p>`)
             .join("");
-
-        // Tampilkan daftar reaksi
-        const responseList = document.getElementById("responses");
-        responseList.innerHTML = ""; // Bersihkan daftar sebelumnya
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            const li = document.createElement("li");
-            li.textContent = `${data.reaction} (Waktu: ${data.timestamp.toDate().toLocaleString()})`;
-            responseList.appendChild(li);
-        });
     });
 }
 
 // Panggil fungsi untuk menampilkan reaksi
 displayReactions();
-
-// Fungsi untuk membersihkan daftar reaksi
-function clearReactions() {
-    document.getElementById("responses").innerHTML = "";
-}
