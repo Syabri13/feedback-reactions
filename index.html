@@ -18,11 +18,11 @@
             <button id="logout-btn" style="display:none;">Logout</button>
         </div>
         <div class="reactions" id="reactions-container" style="display:none;">
-            <div class="reaction" onclick="submitReaction('Senang 😊')">😊<br><span>Senang</span></div>
-            <div class="reaction" onclick="submitReaction('Sedih 😢')">😢<br><span>Sedih</span></div>
-            <div class="reaction" onclick="submitReaction('Marah 😡')">😡<br><span>Marah</span></div>
-            <div class="reaction" onclick="submitReaction('Puas 👍')">👍<br><span>Puas</span></div>
-            <div class="reaction" onclick="submitReaction('Tidak Puas 👎')">👎<br><span>Tidak Puas</span></div>
+            <div class="reaction" onclick="submitReaction('Senang 😊', event)">😊<br><span>Senang</span></div>
+            <div class="reaction" onclick="submitReaction('Sedih 😢', event)">😢<br><span>Sedih</span></div>
+            <div class="reaction" onclick="submitReaction('Marah 😡', event)">😡<br><span>Marah</span></div>
+            <div class="reaction" onclick="submitReaction('Puas 👍', event)">👍<br><span>Puas</span></div>
+            <div class="reaction" onclick="submitReaction('Tidak Puas 👎', event)">👎<br><span>Tidak Puas</span></div>
         </div>
         <div id="counts" class="reaction-counts">
             <h2>Jumlah Reaksi:</h2>
@@ -31,7 +31,6 @@
             <h2>Reaksi Semua Pengguna:</h2>
             <ul id="responses"></ul>
         </div>
-        <button onclick="clearReactions()" style="display:none;" id="clear-btn">Bersihkan Reaksi</button>
         <div id="error-message" style="color: red; display: none;">
             <p>Login gagal. Silakan coba lagi.</p>
         </div>
