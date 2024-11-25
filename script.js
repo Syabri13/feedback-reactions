@@ -1,113 +1,90 @@
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// Konfigurasi Firebase
+// Firebase configuration (replace with your config)
 const firebaseConfig = {
     apiKey: "AIzaSyCbB1Y_cWOIBa9gThcmm7nroQV6XomFuEU",
     authDomain: "projectsyabri.firebaseapp.com",
     projectId: "projectsyabri",
-    storageBucket: "projectsyabri.firebasestorage.app",
+    storageBucket: "projectsyabri.appspot.com",
     messagingSenderId: "1013347367098",
-    appId: "1:1013347367098:web:362ac0b98802861ca72a83",
+    appId: "1:1013347367098:web:362ac0b98802861ca72a83"
 };
 
-// Inisialisasi Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Fungsi login dengan Google
-document.getElementById("login-btn").addEventListener("click", function () {
+// DOM Elements
+const loginBtn = document.getElementById("login-btn");
+const logoutBtn = document.getElementById("logout-btn");
+const reactionsContainer = document.getElementById("reactions-container");
+const responsesList = document.getElementById("responses");
+
+// Function to handle login
+loginBtn.addEventListener("click", () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
         .then((result) => {
             const user = result.user;
-            document.getElementById("auth-container").style.display = "none";
-            document.getElementById("reactions-container").style.display = "block";
-            document.getElementById("logout-btn").style.display = "inline-block";
-            console.log(`User ${user.displayName} berhasil login.`);
+            alert(`Selamat datang, ${user.displayName}`);
+            loginBtn.style.display = "none";
+            logoutBtn.style.display = "block";
+            reactionsContainer.style.display = "flex";
         })
         .catch((error) => {
             console.error("Login gagal:", error);
-            document.getElementById("error-message").style.display = "block";
         });
 });
 
-// Fungsi logout
-document.getElementById("logout-btn").addEventListener("click", function () {
-    signOut(auth).then(() => {
-        document.getElementById("auth-container").style.display = "block";
-        document.getElementById("reactions-container").style.display = "none";
-        document.getElementById("logout-btn").style.display = "none";
-    });
+// Function to handle logout
+logoutBtn.addEventListener("click", () => {
+    signOut(auth)
+        .then(() => {
+            alert("Anda telah logout.");
+            loginBtn.style.display = "block";
+            logoutBtn.style.display = "none";
+            reactionsContainer.style.display = "none";
+        })
+        .catch((error) => {
+            console.error("Logout gagal:", error);
+        });
 });
 
-// Fungsi pengiriman reaksi
-function submitReaction(reaction, event) {
+// Function to submit reaction
+function submitReaction(reaction) {
     const user = auth.currentUser;
-
     if (!user) {
         alert("Anda harus login untuk memberikan reaksi.");
         return;
     }
 
-    console.log("Reaksi diklik:", reaction);
     const reactionsCollection = collection(db, "reactions");
     addDoc(reactionsCollection, {
         userId: user.uid,
         userName: user.displayName,
         reaction: reaction,
-        timestamp: new Date(),
+        timestamp: new Date()
     })
         .then(() => {
-            console.log("Reaksi berhasil disimpan:", reaction);
-            // Tambahkan efek klik
-            event.target.classList.add("clicked");
-            setTimeout(() => {
-                event.target.classList.remove("clicked");
-            }, 300);
+            alert("Reaksi Anda telah disimpan!");
         })
         .catch((error) => {
             console.error("Gagal menyimpan reaksi:", error);
         });
 }
 
-// Fungsi untuk menampilkan reaksi secara real-time
-function displayReactions() {
-    const reactionsCollection = collection(db, "reactions");
-    const q = query(reactionsCollection);
-
-    onSnapshot(q, (snapshot) => {
-        const counts = {
-            "Senang 😊": 0,
-            "Sedih 😢": 0,
-            "Marah 😡": 0,
-            "Puas 👍": 0,
-            "Tidak Puas 👎": 0,
-        };
-
-        // Hapus konten sebelumnya
-        const responseList = document.getElementById("responses");
-        responseList.innerHTML = "";
-
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            counts[data.reaction] = (counts[data.reaction] || 0) + 1;
-
-            // Tampilkan daftar reaksi
-            const li = document.createElement("li");
-            li.textContent = `${data.userName} memilih "${data.reaction}" pada ${data.timestamp.toDate().toLocaleString()}`;
-            responseList.appendChild(li);
-        });
-
-        // Update tampilan jumlah reaksi
-        const countsContainer = document.getElementById("counts");
-        countsContainer.innerHTML = Object.entries(counts)
-            .map(([reaction, count]) => `<p>${reaction}: ${count}</p>`)
-            .join("");
+// Real-time updates to response list
+const reactionsQuery = query(collection(db, "reactions"), orderBy("timestamp", "desc"));
+onSnapshot(reactionsQuery, (snapshot) => {
+    responsesList.innerHTML = ""; // Clear list
+    snapshot.forEach((doc) => {
+        const data = doc.data();
+        const listItem = document.createElement("li");
+        listItem.textContent = `${data.userName}: ${data.reaction} (${new Date(data.timestamp.seconds * 1000).toLocaleString()})`;
+        responsesList.appendChild(listItem);
     });
-}
-
-// Panggil fungsi untuk menampilkan reaksi
-displayReactions();
+});
