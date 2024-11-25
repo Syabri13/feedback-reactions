@@ -66,6 +66,7 @@ function submitReaction(reaction) {
     addDoc(reactionsCollection, {
         userId: user.uid,
         userName: user.displayName,
+        userEmail: user.email,
         reaction: reaction,
         timestamp: new Date()
     })
@@ -84,7 +85,7 @@ onSnapshot(reactionsQuery, (snapshot) => {
     snapshot.forEach((doc) => {
         const data = doc.data();
         const listItem = document.createElement("li");
-        listItem.textContent = `${data.userName}: ${data.reaction} (${new Date(data.timestamp.seconds * 1000).toLocaleString()})`;
+        listItem.textContent = `${data.userName} (${data.userEmail}): ${data.reaction} (${new Date(data.timestamp.seconds * 1000).toLocaleString()})`;
         responsesList.appendChild(listItem);
     });
 });
